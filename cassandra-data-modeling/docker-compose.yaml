@@ -1,0 +1,92 @@
+services:
+  cassandra-1:
+    image: cassandra:5.0
+    container_name: cassandra-1
+    hostname: cassandra-1
+    # C* 5.0 resolves seed hostnames once at boot with no retry; if Docker DNS
+    # hasn't registered the alias yet the process dies. Let Docker re-run it.
+    restart: on-failure
+    ports:
+      - "9042:9042"   # CQL native transport (client connections)
+    environment: &cassandra-env
+      CASSANDRA_CLUSTER_NAME: "harbour-cluster"
+      CASSANDRA_DC: "datacenter1"
+      CASSANDRA_RACK: "rack1"
+      CASSANDRA_ENDPOINT_SNITCH: "GossipingPropertyFileSnitch"
+      # All nodes contact node 1 to join the ring
+      CASSANDRA_SEEDS: "cassandra-1"
+      # 512M is too small for C* 5.0 and makes the seed flap during bootstrap.
+      # 1G per node is the practical floor for a stable local cluster.
+      MAX_HEAP_SIZE: "1G"
+      HEAP_NEWSIZE: "256M"
+      # Allow a joining node to bootstrap even if strict-consistency range
+      # movement can't be guaranteed (fixes "Necessary replicas ... were
+      # removed by source filters" during sequential startup), and give
+      # internode TCP more than the default 2s to connect under load.
+      JVM_EXTRA_OPTS: "-Dcassandra.consistent.rangemovement=false"
+    volumes:
+      - cassandra-1-data:/var/lib/cassandra
+    networks:
+      - cassandra-net
+    healthcheck:
+      test: ["CMD-SHELL", "nodetool status | grep -E '^UN' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+  cassandra-2:
+    image: cassandra:5.0
+    container_name: cassandra-2
+    hostname: cassandra-2
+    restart: on-failure
+    ports:
+      - "9043:9042"
+    environment:
+      <<: *cassandra-env
+    volumes:
+      - cassandra-2-data:/var/lib/cassandra
+    networks:
+      - cassandra-net
+    # Wait until node 1 is healthy before starting, so it can join the seed
+    depends_on:
+      cassandra-1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nodetool status | grep -E '^UN' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+  cassandra-3:
+    image: cassandra:5.0
+    container_name: cassandra-3
+    hostname: cassandra-3
+    restart: on-failure
+    ports:
+      - "9044:9042"
+    environment:
+      <<: *cassandra-env
+    volumes:
+      - cassandra-3-data:/var/lib/cassandra
+    networks:
+      - cassandra-net
+    depends_on:
+      cassandra-2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nodetool status | grep -E '^UN' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+networks:
+  cassandra-net:
+    driver: bridge
+
+volumes:
+  cassandra-1-data:
+  cassandra-2-data:
+  cassandra-3-data:
