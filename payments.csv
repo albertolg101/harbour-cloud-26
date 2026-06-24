@@ -1,0 +1,11 @@
+store_id,coffee_type,price,currency,loyalty_card_id
+store-barcelona-01,LATTE,4.50,EUR,card-101
+store-barcelona-01,ESPRESSO,2.80,EUR,card-102
+store-barcelona-01,CAPPUCCINO,5.00,EUR,card-103
+store-barcelona-01,AMERICANO,3.20,EUR,card-101
+store-barcelona-01,FLAT_WHITE,4.80,EUR,card-104
+store-barcelona-01,MOCHA,5.50,EUR,card-105
+store-barcelona-01,CORTADO,3.00,EUR,card-102
+store-barcelona-01,COLD_BREW,4.00,EUR,card-106
+store-barcelona-01,DOUBLE_ESPRESSO,3.50,EUR,card-107
+store-barcelona-01,MACCHIATO,3.80,EUR,card-103
