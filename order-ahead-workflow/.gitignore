@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+.tools/
+_*.ps1
+_*.txt
